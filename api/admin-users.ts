@@ -2,6 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { verifyAdmin, getAdminClient, handleCors } from './_lib/adminAuth'
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  try {
   if (handleCors(req, res)) return
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' })
 
@@ -83,4 +84,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     page: pageNum,
     limit: limitNum,
   })
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Unknown error'
+    return res.status(500).json({ error: 'Internal server error', message })
+  }
 }
