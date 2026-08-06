@@ -6,7 +6,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' })
 
   const auth = await verifyAdmin(req)
-  if (!auth.authorized) return res.status(403).json({ error: 'Forbidden' })
+  if (!auth.authorized) {
+    const hasToken = !!req.headers.authorization
+    const hasUrl = !!process.env.SUPABASE_URL
+    const hasKey = !!process.env.SUPABASE_SERVICE_ROLE_KEY
+    return res.status(403).json({
+      error: 'Forbidden',
+      debug: { hasToken, hasUrl, hasKey }
+    })
+  }
 
   const sb = getAdminClient()
 
