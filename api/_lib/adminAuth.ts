@@ -11,6 +11,7 @@ const ADMIN_EMAILS = [
 const ALLOWED_ORIGINS = [
   'http://localhost:5173',
   'https://admin.mitiendavirtual.cl',
+  'https://www.admin.mitiendavirtual.cl',
   'https://admin-mitiendavirtual.vercel.app',
 ]
 
