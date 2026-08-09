@@ -4,7 +4,7 @@ import { verifyAdmin, getAdminClient, handleCors } from './_lib/adminAuth.js'
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
   if (handleCors(req, res)) return
-  if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' })
+  if (req.method !== 'GET' && req.method !== 'DELETE') return res.status(405).json({ error: 'Method not allowed' })
 
   const auth = await verifyAdmin(req)
   if (!auth.authorized) return res.status(403).json({ error: 'Forbidden' })
@@ -78,12 +78,38 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     hasWhatsapp: wppUsers.has(u.id),
   }))
 
-  res.status(200).json({
+  return res.status(200).json({
     users: enriched,
     total: count || 0,
     page: pageNum,
     limit: limitNum,
   })
+  }
+
+  if (req.method === 'DELETE') {
+    const { id } = req.query as Record<string, string>
+
+    if (!id) return res.status(400).json({ error: 'Missing user id' })
+
+    await Promise.all([
+      sb.from('products').delete().eq('user_id', id),
+      sb.from('faqs').delete().eq('user_id', id),
+      sb.from('leads').delete().eq('user_id', id),
+      sb.from('agent_prompts').delete().eq('user_id', id),
+      sb.from('instances').delete().eq('user_id', id),
+      sb.from('telegram_link_tokens').delete().eq('user_id', id),
+      sb.from('whatsapp_connections').delete().eq('user_id', id),
+    ])
+
+    await sb.from('profiles').delete().eq('id', id)
+
+    const { error: authError } = await sb.auth.admin.deleteUser(id)
+    if (authError) return res.status(500).json({ error: authError.message })
+
+    return res.status(200).json({ success: true })
+  }
+
+  return res.status(405).json({ error: 'Method not allowed' })
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Unknown error'
     return res.status(500).json({ error: 'Internal server error', message })

@@ -66,6 +66,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       if (!id) return res.status(400).json({ error: 'Missing client id' })
 
+      await Promise.all([
+        sb.from('products').delete().eq('user_id', id),
+        sb.from('faqs').delete().eq('user_id', id),
+        sb.from('leads').delete().eq('user_id', id),
+        sb.from('agent_prompts').delete().eq('user_id', id),
+        sb.from('instances').delete().eq('user_id', id),
+        sb.from('telegram_link_tokens').delete().eq('user_id', id),
+        sb.from('whatsapp_connections').delete().eq('user_id', id),
+      ])
+
+      await sb.from('profiles').delete().eq('id', id)
+
       const { error: authError } = await sb.auth.admin.deleteUser(id)
       if (authError) return res.status(500).json({ error: authError.message })
 

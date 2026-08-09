@@ -3,7 +3,8 @@ import { Session } from '@supabase/supabase-js'
 import { supabase } from '../supabaseClient'
 import { formatDate } from '../utils/formatters'
 import { motion } from 'framer-motion'
-import { Search, ChevronLeft, ChevronRight, Instagram, Send, Phone, ArrowLeft } from 'lucide-react'
+import { Search, ChevronLeft, ChevronRight, Instagram, Send, Phone, ArrowLeft, Trash2 } from 'lucide-react'
+import Swal from 'sweetalert2'
 import UserDetailView from './UserDetailView'
 
 interface User {
@@ -48,6 +49,11 @@ export default function UsersView({ session: _session }: { session: Session }) {
   const [loading, setLoading] = useState(true)
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null)
 
+  async function getToken() {
+    const { data: { session } } = await supabase.auth.getSession()
+    return session?.access_token
+  }
+
   const fetchUsers = useCallback(async () => {
     setLoading(true)
     const { data: { session } } = await supabase.auth.getSession()
@@ -72,6 +78,52 @@ export default function UsersView({ session: _session }: { session: Session }) {
     const timer = setTimeout(fetchUsers, search ? 300 : 0)
     return () => clearTimeout(timer)
   }, [fetchUsers, search])
+
+  async function handleDelete(user: User) {
+    const result = await Swal.fire({
+      title: '¿Eliminar usuario?',
+      html: `<p style="color:#a1a1aa;">Se eliminará permanentemente a <strong style="color:#e4e4e7;">${user.email}</strong> y todos sus datos asociados.</p>`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#ef4444',
+      background: '#111118',
+      color: '#e4e4e7',
+    })
+
+    if (!result.isConfirmed) return
+
+    const token = await getToken()
+    if (!token) return
+
+    const res = await fetch(`/api/admin-users?id=${user.id}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` },
+    })
+
+    if (res.ok) {
+      Swal.fire({
+        icon: 'success',
+        title: 'Eliminado',
+        text: 'El usuario fue eliminado correctamente.',
+        timer: 1500,
+        showConfirmButton: false,
+        background: '#111118',
+        color: '#e4e4e7',
+      })
+      fetchUsers()
+    } else {
+      const err = await res.json()
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: err.error || 'No se pudo eliminar el usuario.',
+        background: '#111118',
+        color: '#e4e4e7',
+      })
+    }
+  }
 
   if (selectedUserId) {
     return (
@@ -136,19 +188,20 @@ export default function UsersView({ session: _session }: { session: Session }) {
               <th className="px-5 py-4 border-b border-white/5 text-center">Productos</th>
               <th className="px-5 py-4 border-b border-white/5 text-center">Canales</th>
               <th className="px-5 py-4 border-b border-white/5">Registro</th>
+              <th className="px-5 py-4 border-b border-white/5 text-center">Acciones</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-white/[0.03]">
             {loading && (
               <tr>
-                <td colSpan={6} className="px-5 py-16 text-center">
+                <td colSpan={7} className="px-5 py-16 text-center">
                   <div className="w-5 h-5 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto" />
                 </td>
               </tr>
             )}
             {!loading && users.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-5 py-16 text-center text-zinc-700 italic">
+                <td colSpan={7} className="px-5 py-16 text-center text-zinc-700 italic">
                   No se encontraron usuarios
                 </td>
               </tr>
@@ -191,6 +244,17 @@ export default function UsersView({ session: _session }: { session: Session }) {
                     </div>
                   </td>
                   <td className="px-5 py-3.5 text-xs text-zinc-600">{formatDate(user.created_at)}</td>
+                  <td className="px-5 py-3.5">
+                    <div className="flex items-center justify-center">
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleDelete(user) }}
+                        className="p-2 rounded-lg text-zinc-600 hover:text-red-400 hover:bg-red-500/10 transition-all"
+                        title="Eliminar"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </td>
                 </tr>
               )
             })}
