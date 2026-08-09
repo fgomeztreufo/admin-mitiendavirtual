@@ -8,6 +8,7 @@ import {
   Globe,
   Activity,
   Receipt,
+  UserCog,
   LogOut,
   Menu,
   X,
@@ -19,8 +20,9 @@ const UsersView = lazy(() => import('./UsersView'))
 const ChannelsView = lazy(() => import('./ChannelsView'))
 const ActivityView = lazy(() => import('./ActivityView'))
 const ContabilidadView = lazy(() => import('./ContabilidadView'))
+const ClientsView = lazy(() => import('./ClientsView'))
 
-type Tab = 'overview' | 'users' | 'channels' | 'activity' | 'contabilidad'
+type Tab = 'overview' | 'users' | 'clients' | 'channels' | 'activity' | 'contabilidad'
 
 interface Props {
   session: Session
@@ -29,6 +31,7 @@ interface Props {
 const NAV_ITEMS: { key: Tab; label: string; icon: typeof LayoutDashboard }[] = [
   { key: 'overview', label: 'Overview', icon: LayoutDashboard },
   { key: 'users', label: 'Usuarios', icon: Users },
+  { key: 'clients', label: 'Clientes', icon: UserCog },
   { key: 'channels', label: 'Canales', icon: Globe },
   { key: 'activity', label: 'Actividad', icon: Activity },
   { key: 'contabilidad', label: 'Contabilidad', icon: Receipt },
@@ -56,6 +59,8 @@ export default function AdminDashboard({ session }: Props) {
         return <OverviewView session={session} />
       case 'users':
         return <UsersView session={session} />
+      case 'clients':
+        return <ClientsView session={session} />
       case 'channels':
         return <ChannelsView session={session} />
       case 'activity':

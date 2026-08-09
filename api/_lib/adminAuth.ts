@@ -38,7 +38,7 @@ export function handleCors(req: VercelRequest, res: VercelResponse): boolean {
   if (ALLOWED_ORIGINS.includes(origin)) {
     res.setHeader('Access-Control-Allow-Origin', origin)
   }
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS')
+  res.setHeader('Access-Control-Allow-Methods', 'GET, PUT, DELETE, OPTIONS')
   res.setHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type')
 
   if (req.method === 'OPTIONS') {
